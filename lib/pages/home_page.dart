@@ -16,6 +16,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   double? _deviceHight, _deviceWidth;
+  String? _selectedCoin = "bitcoin";
 
   HTTPService? _http;
 
@@ -48,7 +49,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _selectedCoinDorpdown() {
-    List<String> _coins = ["bitcoin"];
+    List<String> _coins = [
+      "bitcoin",
+      "ethereum",
+      "tether",
+      "cardano",
+      "ripple"
+    ];
     List<DropdownMenuItem<String>> _items = _coins
         .map(
           (e) => DropdownMenuItem(
@@ -65,9 +72,13 @@ class _HomePageState extends State<HomePage> {
         )
         .toList();
     return DropdownButton(
-      value: _coins.first,
+      value: _selectedCoin,
       items: _items,
-      onChanged: (_value) {},
+      onChanged: (_value) {
+        setState(() {
+          _selectedCoin = _value;
+        });
+      },
       dropdownColor: const Color.fromRGBO(83, 88, 206, 1.0),
       iconSize: 30,
       icon: const Icon(
@@ -80,23 +91,26 @@ class _HomePageState extends State<HomePage> {
 
   Widget _dataWidgets() {
     return FutureBuilder(
-      future: _http!.get("/coins/bitcoin"),
+      future: _http!.get("/coins/$_selectedCoin"),
       builder: (BuildContext _context, AsyncSnapshot _snapshot) {
         if (_snapshot.hasData) {
-          Map _data = jsonDecode(_snapshot.data.toString());
+          Map _data = jsonDecode(
+            _snapshot.data.toString(),
+          );
           num _usdPrice = _data["market_data"]["current_price"]["usd"];
           num _change24h = _data["market_data"]["price_change_percentage_24h"];
+          Map _exchangeRates = _data["market_data"]["current_price"];
           return Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
-                onDoubleTap: (){
+                onDoubleTap: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (BuildContext _context){
-                        return DetailsPage();
-                      }));
+                      MaterialPageRoute(builder: (BuildContext _context) {
+                    return DetailsPage(rates:_exchangeRates);
+                  }));
                 },
                 child: _coinImageWidget(
                   _data["image"]["large"],
